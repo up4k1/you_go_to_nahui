@@ -85,6 +85,7 @@ services:
       YOURLS_PASS: \${YOURLS_PASS}
     volumes:
       - ./yourls-plugins:/var/www/html/user/plugins
+      - ./www:/var/www
     depends_on:
       - mysql
 
