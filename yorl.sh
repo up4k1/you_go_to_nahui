@@ -1,15 +1,15 @@
 #!/bin/bash
 
-# Проверка и установка Docker и Docker Compose
+# Checking and installing Docker and Docker Compose
 if ! [ -x "$(command -v docker)" ]; then
-  echo 'Установка Docker...'
+  echo 'Installing Docker...'
   sudo apt update
   sudo apt install -y apt-transport-https ca-certificates curl software-properties-common
   curl -fsSL https://download.docker.com/linux/ubuntu/gpg | sudo apt-key add -
   sudo add-apt-repository "deb [arch=amd64] https://download.docker.com/linux/ubuntu $(lsb_release -cs) stable"
   sudo apt update
   sudo apt install -y docker-ce
-  echo 'Docker установлен.'
+  echo 'Docker installed.'
 else
   echo 'Docker уже установлен.'
 fi
@@ -18,21 +18,22 @@ if ! [ -x "$(command -v docker-compose)" ]; then
   echo 'Установка Docker Compose...'
   sudo curl -L "https://github.com/docker/compose/releases/download/1.29.2/docker-compose-$(uname -s)-$(uname -m)" -o /usr/local/bin/docker-compose
   sudo chmod +x /usr/local/bin/docker-compose
-  echo 'Docker Compose установлен.'
+  echo 'Docker Compose installed.'
 else
   echo 'Docker Compose уже установлен.'
 fi
 
-read -p "Введите имя домена (например, example.com): " DOMAIN
-read -p "Введите ваш email для Let's Encrypt: " EMAIL
-read -p "Введите имя пользователя для YOURLS: " YOURLS_USER
-read -p "Введите пароль для YOURLS: " YOURLS_PASS
-read -p "Введите пароль для MySQL: " MYSQL_ROOT_PASSWORD
+# Prompt user for input
+read -p "Enter your domain (e.g., example.com): " DOMAIN
+read -p "Enter your email for Let's Encrypt: " EMAIL
+read -p "Enter username for YOURLS: " YOURLS_USER
+read -p "Enter password for YOURLS: " YOURLS_PASS
+read -p "Enter MySQL root password: " MYSQL_ROOT_PASSWORD
 
-# Создание директории для plugins, если она еще не существует
+# Create directory for plugins if it doesn't exist
 mkdir -p yourls-plugins
 
-# Запись переменных в .env файл
+# Write environment variables to .env file
 cat << EOF > .env
 DOMAIN=$DOMAIN
 EMAIL=$EMAIL
@@ -43,7 +44,7 @@ MYSQL_ROOT_PASSWORD=$MYSQL_ROOT_PASSWORD
 MYSQL_DATABASE=yourls
 EOF
 
-# Создание файла docker-compose.yml
+# Create docker-compose.yml file
 cat << EOF > docker-compose.yml
 version: '3'
 
@@ -80,6 +81,8 @@ services:
       YOURLS_DB_PASS: \${MYSQL_ROOT_PASSWORD}
       YOURLS_DB_NAME: \${MYSQL_DATABASE}
       YOURLS_SITE: \${YOURLS_SITE}
+      YOURLS_USER: \${YOURLS_USER}
+      YOURLS_PASS: \${YOURLS_PASS}
     volumes:
       - ./yourls-plugins:/var/www/html/user/plugins
     depends_on:
@@ -98,4 +101,4 @@ EOF
 echo "Запуск контейнеров..."
 docker-compose up -d
 
-echo "Контейнеры успешно запущены."
+echo "Контейнеры запущены."
