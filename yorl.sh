@@ -1,6 +1,6 @@
 #!/bin/bash
 
-# Checking and installing Docker and Docker Compose
+# Checking and installingыв Docker and Docker Compose
 if ! [ -x "$(command -v docker)" ]; then
   echo 'Installing Docker...'
   sudo apt update
