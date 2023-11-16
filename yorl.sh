@@ -95,4 +95,7 @@ services:
       - ./mysql-data:/var/lib/mysql
 EOF
 
-echo "Настройка завершена. Выполните 'docker-compose up -d' для запуска."
+echo "Запуск контейнеров..."
+docker-compose up -d
+
+echo "Контейнеры успешно запущены."
