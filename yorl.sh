@@ -1,67 +1,34 @@
 #!/bin/bash
 
-# Colors for output
-RED='\033[0;31m'
-GREEN='\033[0;32m'
-YELLOW='\033[1;33m'
-BLUE='\033[0;34m'
-NC='\033[0m' # No Color
-
-# Spinner for loading animation
-spin() {
-    spinner="/|\\-/|\\-"
-    while :
-    do 
-        for i in ${spinner[@]}; do
-            echo -ne "\r$i"
-            sleep 0.2
-        done
-    done
-}
-
-# Check and install Docker
-echo -e "${BLUE}Проверка на наличие Docker...${NC}"
+# Checking and installing Docker and Docker Compose
 if ! [ -x "$(command -v docker)" ]; then
-    spin &
-    SPIN_PID=$!
-    disown
-    
-    sudo apt update
-    sudo apt install -y apt-transport-https ca-certificates curl software-properties-common
-    curl -fsSL https://download.docker.com/linux/ubuntu/gpg | sudo apt-key add -
-    sudo add-apt-repository "deb [arch=amd64] https://download.docker.com/linux/ubuntu $(lsb_release -cs) stable"
-    sudo apt update
-    sudo apt install -y docker-ce
-
-    kill -9 $SPIN_PID
-    wait $SPIN_PID 2>/dev/null
-    echo -e "${GREEN}Docker установлен.${NC}"
+  echo 'Installing Docker...'
+  sudo apt update
+  sudo apt install -y apt-transport-https ca-certificates curl software-properties-common
+  curl -fsSL https://download.docker.com/linux/ubuntu/gpg | sudo apt-key add -
+  sudo add-apt-repository "deb [arch=amd64] https://download.docker.com/linux/ubuntu $(lsb_release -cs) stable"
+  sudo apt update
+  sudo apt install -y docker-ce
+  echo 'Docker installed.'
 else
-    echo -e "${GREEN}Docker уже установлен.${NC}"
+  echo 'Docker уже установлен.'
 fi
 
-# Check and install Docker Compose
-echo -e "${BLUE}Проверка и установка Docker Compose...${NC}"
 if ! [ -x "$(command -v docker-compose)" ]; then
-    spin &
-    SPIN_PID=$!
-
-    sudo curl -L "https://github.com/docker/compose/releases/download/1.29.2/docker-compose-$(uname -s)-$(uname -m)" -o /usr/local/bin/docker-compose
-    sudo chmod +x /usr/local/bin/docker-compose
-
-    kill -9 $SPIN_PID
-    wait $SPIN_PID 2>/dev/null
-    echo -e "${GREEN}Docker Compose установлен.${NC}"
+  echo 'Установка Docker Compose...'
+  sudo curl -L "https://github.com/docker/compose/releases/download/1.29.2/docker-compose-$(uname -s)-$(uname -m)" -o /usr/local/bin/docker-compose
+  sudo chmod +x /usr/local/bin/docker-compose
+  echo 'Docker Compose installed.'
 else
-    echo -e "${GREEN}Docker Compose уже установлен.${NC}"
+  echo 'Docker Compose уже установлен.'
 fi
 
 # Prompt user for input
-read -p "Введите домен без https и www (e.g., example.com): " DOMAIN
-read -p "Введите email для Let's Encrypt: " EMAIL
-read -p "Введите имя пользователя для админ-панели YOURLS: " YOURLS_USER
-read -p "Введите пароль для админ-панели YOURLS: " YOURLS_PASS
-read -p "Введите MySQL root пароль: " MYSQL_ROOT_PASSWORD
+read -p "Enter your domain (e.g., example.com): " DOMAIN
+read -p "Enter your email for Let's Encrypt: " EMAIL
+read -p "Enter username for YOURLS: " YOURLS_USER
+read -p "Enter password for YOURLS: " YOURLS_PASS
+read -p "Enter MySQL root password: " MYSQL_ROOT_PASSWORD
 
 # Create directory for plugins if it doesn't exist
 mkdir -p yourls-plugins
@@ -131,12 +98,7 @@ services:
       - ./mysql-data:/var/lib/mysql
 EOF
 
-echo -e "${YELLOW}Запуск контейнеров...${NC}"
-spin &
-SPIN_PID=$!
-
+echo "Запуск контейнеров..."
 docker-compose up -d
 
-kill -9 $SPIN_PID
-wait $SPIN_PID 2>/dev/null
-echo -e "${GREEN}Контейнеры запущены.${NC}"
+echo "Контейнеры запущены."
