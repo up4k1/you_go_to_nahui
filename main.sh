@@ -1,22 +1,3 @@
-#!/bin/bash
-
-# Проверка наличия Docker
-if ! command -v docker &>/dev/null; then
-  echo "Docker не найден. Устанавливаю Docker..."
-  sudo apt update
-  sudo apt install -y docker.io
-  sudo systemctl start docker
-  sudo systemctl enable docker
-fi
-
-# Проверка наличия Docker Compose
-if ! command -v docker-compose &>/dev/null; then
-  echo "Docker Compose не найден. Устанавливаю Docker Compose..."
-  sudo curl -L "https://github.com/docker/compose/releases/download/1.27.4/docker-compose-$(uname -s)-$(uname -m)" -o /usr/local/bin/docker-compose
-  sudo chmod +x /usr/local/bin/docker-compose
-fi
-
-# Запрос ввода данных пользователя
 read -p "Enter your domain (e.g., yourdomain.com): " DOMAIN
 read -p "Enter your email for Let's Encrypt: " EMAIL
 read -p "Enter your YOURLS admin username: " YOURLS_ADMIN_USER
@@ -81,7 +62,6 @@ services:
       YOURLS_PASS: $YOURLS_ADMIN_PASS
     volumes:
       - yourls_data:/var/www/html
-      - ./plugins:/var/www/html/user/plugins
   nginx:
     build: .
     depends_on:
@@ -109,7 +89,6 @@ sleep 30
 # Получение SSL-сертификатов с Certbot
 docker-compose exec nginx certbot certonly --webroot -w /var/www/certbot -d $DOMAIN --email $EMAIL --agree-tos --no-eff-email --keep-until-expiring --quiet
 
-# Создание конфигурации Nginx для HTTPS
 cat <<EOF >nginx-ssl.conf
 server {
     listen 443 ssl;
@@ -136,7 +115,7 @@ docker cp nginx-ssl.conf $NGINX_CONTAINER_ID:/etc/nginx/conf.d/default.conf
 docker-compose restart nginx
 YOURLS_CONTAINER_ID=$(docker-compose ps -q yourls)
 if [ ! -z "$YOURLS_CONTAINER_ID" ]; then
-  docker exec $YOURLS_CONTAINER_ID bash -c "echo 'ServerName $DOMAIN' >> /etc/apache2/apache2.conf && apachectl restart"
+    docker exec $YOURLS_CONTAINER_ID bash -c "echo 'ServerName $DOMAIN' >> /etc/apache2/apache2.conf && apachectl restart"
 fi
 sed -i '/http {/a \ \ \ \ include /etc/nginx/conf.d/*.conf;' ./nginx.conf
 
