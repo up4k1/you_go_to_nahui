@@ -1,3 +1,4 @@
+# Запрос ввода данных пользователя
 read -p "Enter your domain (e.g., yourdomain.com): " DOMAIN
 read -p "Enter your email for Let's Encrypt: " EMAIL
 read -p "Enter your YOURLS admin username: " YOURLS_ADMIN_USER
@@ -62,7 +63,6 @@ services:
       YOURLS_PASS: $YOURLS_ADMIN_PASS
     volumes:
       - yourls_data:/var/www/html
-      - ./plugins:/var/www/html/user/plugins
   nginx:
     build: .
     depends_on:
