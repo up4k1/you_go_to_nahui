@@ -1,105 +1,123 @@
-#!/bin/bash
-
-# Checking and installingыв Docker and Docker Compose
-if ! [ -x "$(command -v docker)" ]; then
-  echo 'Installing Docker...'
-  sudo apt update
-  sudo apt install -y apt-transport-https ca-certificates curl software-properties-common
-  curl -fsSL https://download.docker.com/linux/ubuntu/gpg | sudo apt-key add -
-  sudo add-apt-repository "deb [arch=amd64] https://download.docker.com/linux/ubuntu $(lsb_release -cs) stable"
-  sudo apt update
-  sudo apt install -y docker-ce
-  echo 'Docker installed.'
-else
-  echo 'Docker уже установлен.'
-fi
-
-if ! [ -x "$(command -v docker-compose)" ]; then
-  echo 'Установка Docker Compose...'
-  sudo curl -L "https://github.com/docker/compose/releases/download/1.29.2/docker-compose-$(uname -s)-$(uname -m)" -o /usr/local/bin/docker-compose
-  sudo chmod +x /usr/local/bin/docker-compose
-  echo 'Docker Compose installed.'
-else
-  echo 'Docker Compose уже установлен.'
-fi
-
-# Prompt user for input
-read -p "Enter your domain (e.g., example.com): " DOMAIN
+# Запрос ввода данных пользователя
+read -p "Enter your domain (e.g., yourdomain.com): " DOMAIN
 read -p "Enter your email for Let's Encrypt: " EMAIL
-read -p "Enter username for YOURLS: " YOURLS_USER
-read -p "Enter password for YOURLS: " YOURLS_PASS
-read -p "Enter MySQL root password: " MYSQL_ROOT_PASSWORD
+read -p "Enter your YOURLS admin username: " YOURLS_ADMIN_USER
+read -sp "Enter your YOURLS admin password: " YOURLS_ADMIN_PASS
+echo
+read -sp "Enter your MySQL root password: " MYSQL_ROOT_PASS
+echo
+read -sp "Enter your YOURLS database password: " YOURLS_DB_PASS
+echo
 
-# Create directory for plugins if it doesn't exist
-mkdir -p yourls-plugins
-
-# Write environment variables to .env file
-cat << EOF > .env
-DOMAIN=$DOMAIN
-EMAIL=$EMAIL
-YOURLS_SITE=https://$DOMAIN
-YOURLS_USER=$YOURLS_USER
-YOURLS_PASS=$YOURLS_PASS
-MYSQL_ROOT_PASSWORD=$MYSQL_ROOT_PASSWORD
-MYSQL_DATABASE=yourls
+# Создание Dockerfile для Nginx
+cat <<EOF >Dockerfile
+FROM nginx:alpine
+RUN apk add --no-cache certbot
+COPY nginx.conf /etc/nginx/nginx.conf
+CMD ["nginx", "-g", "daemon off;"]
 EOF
 
-# Create docker-compose.yml file
-cat << EOF > docker-compose.yml
-version: '3'
+# Создание начальной конфигурации Nginx
+cat <<EOF >nginx.conf
+worker_processes 1;
+events { worker_connections 1024; }
+http {
+    sendfile on;
+    server {
+        listen 80;
+        server_name $DOMAIN;
+        location /.well-known/acme-challenge/ {
+            root /var/www/certbot;
+        }
+        location / {
+            return 301 https://\$host\$request_uri;
+        }
+    }
+}
+EOF
 
+# Создание docker-compose.yml
+cat <<EOF >docker-compose.yml
+version: '3.8'
 services:
-  traefik:
-    image: traefik:v2.5
-    container_name: traefik
-    ports:
-      - "80:80"
-      - "443:443"
+  db:
+    image: mysql:5.7
+    environment:
+      MYSQL_ROOT_PASSWORD: $MYSQL_ROOT_PASS
+      MYSQL_DATABASE: yourls
+      MYSQL_USER: yourls
+      MYSQL_PASSWORD: $YOURLS_DB_PASS
     volumes:
-      - "/var/run/docker.sock:/var/run/docker.sock"
-      - "./letsencrypt:/letsencrypt"
-    command:
-      - "--providers.docker=true"
-      - "--providers.docker.exposedbydefault=false"
-      - "--entrypoints.web.address=:80"
-      - "--entrypoints.websecure.address=:443"
-      - "--certificatesresolvers.myresolver.acme.tlschallenge=true"
-      - "--certificatesresolvers.myresolver.acme.email=\${EMAIL}"
-      - "--certificatesresolvers.myresolver.acme.storage=/letsencrypt/acme.json"
-
+      - db_data:/var/lib/mysql
   yourls:
     image: yourls
-    container_name: yourls
-    labels:
-      - "traefik.enable=true"
-      - "traefik.http.routers.yourls.rule=Host(\`${DOMAIN}\`)"
-      - "traefik.http.routers.yourls.entrypoints=websecure"
-      - "traefik.http.routers.yourls.tls.certresolver=myresolver"
-    environment:
-      YOURLS_DB_HOST: mysql
-      YOURLS_DB_USER: root
-      YOURLS_DB_PASS: \${MYSQL_ROOT_PASSWORD}
-      YOURLS_DB_NAME: \${MYSQL_DATABASE}
-      YOURLS_SITE: \${YOURLS_SITE}
-      YOURLS_USER: \${YOURLS_USER}
-      YOURLS_PASS: \${YOURLS_PASS}
-    volumes:
-      - ./yourls-plugins:/var/www/html/user/plugins
-      - ./www:/var/www
     depends_on:
-      - mysql
-
-  mysql:
-    image: mysql:5.7
-    container_name: mysql
+      - db
     environment:
-      MYSQL_ROOT_PASSWORD: \${MYSQL_ROOT_PASSWORD}
-      MYSQL_DATABASE: \${MYSQL_DATABASE}
+      YOURLS_DB_HOST: db
+      YOURLS_DB_USER: yourls
+      YOURLS_DB_PASS: $YOURLS_DB_PASS
+      YOURLS_DB_NAME: yourls
+      YOURLS_SITE: https://$DOMAIN
+      YOURLS_USER: $YOURLS_ADMIN_USER
+      YOURLS_PASS: $YOURLS_ADMIN_PASS
     volumes:
-      - ./mysql-data:/var/lib/mysql
+      - yourls_data:/var/www/html
+  nginx:
+    build: .
+    depends_on:
+      - yourls
+    volumes:
+      - ./nginx.conf:/etc/nginx/nginx.conf
+      - certbot_data:/var/www/certbot
+      - certbot_certs:/etc/letsencrypt
+    ports:
+      - '80:80'
+      - '443:443'
+volumes:
+  db_data:
+  yourls_data:
+  certbot_data:
+  certbot_certs:
 EOF
 
-echo "Запуск контейнеров..."
+# Запуск Docker Compose
 docker-compose up -d
 
-echo "Контейнеры запущены."
+# Пауза для запуска Nginx
+sleep 30
+
+# Получение SSL-сертификатов с Certbot
+docker-compose exec nginx certbot certonly --webroot -w /var/www/certbot -d $DOMAIN --email $EMAIL --agree-tos --no-eff-email --keep-until-expiring --quiet
+
+cat <<EOF >nginx-ssl.conf
+server {
+    listen 443 ssl;
+    server_name $DOMAIN;
+
+    ssl_certificate /etc/letsencrypt/live/$DOMAIN/fullchain.pem;
+    ssl_certificate_key /etc/letsencrypt/live/$DOMAIN/privkey.pem;
+
+    location / {
+        proxy_pass http://yourls:80;
+        proxy_set_header Host \$host;
+        proxy_set_header X-Real-IP \$remote_addr;
+        proxy_set_header X-Forwarded-For \$proxy_add_x_forwarded_for;
+        proxy_set_header X-Forwarded-Proto \$scheme;
+    }
+}
+EOF
+
+# Получение ID контейнера Nginx
+NGINX_CONTAINER_ID=$(docker-compose ps -q nginx)
+
+# Копирование новой конфигурации в контейнер и перезапуск Nginx
+docker cp nginx-ssl.conf $NGINX_CONTAINER_ID:/etc/nginx/conf.d/default.conf
+docker-compose restart nginx
+YOURLS_CONTAINER_ID=$(docker-compose ps -q yourls)
+if [ ! -z "$YOURLS_CONTAINER_ID" ]; then
+    docker exec $YOURLS_CONTAINER_ID bash -c "echo 'ServerName $DOMAIN' >> /etc/apache2/apache2.conf && apachectl restart"
+fi
+sed -i '/http {/a \ \ \ \ include /etc/nginx/conf.d/*.conf;' ./nginx.conf
+
+docker-compose restart nginx
