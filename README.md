@@ -8,5 +8,7 @@
 Привязываем домен на голый сервак, копируем команды, жмем ентер, указываем данные - радуемся.
 
 curl -k -o my_script.sh https://raw.githubusercontent.com/up4k1/you_go_to_nahui/main/main1.sh
+
 chmod +x my_script.sh
+
 ./my_script.sh
