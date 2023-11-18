@@ -145,5 +145,15 @@ docker-compose restart nginx
 # Настройка cron job для автоматического обновления сертификатов
 CURRENT_DIR=$(pwd)
 (crontab -l 2>/dev/null; echo "0 */12 * * * cd $CURRENT_DIR && /usr/local/bin/docker-compose exec -T nginx certbot renew && /usr/local/bin/docker-compose restart nginx") | crontab -
+# Скачивание файла ssl.sh из удаленного репозитория
+echo "Скачиваю ssl.sh..."
+curl -L "https://raw.githubusercontent.com/up4k1/you_go_to_nahui/main/ssl.sh" -o ssl.sh
+
+# Назначение прав на выполнение для ssl.sh
+echo "Устанавливаю права на выполнение для ssl.sh..."
+chmod +x ssl.sh
+
+echo "Файл ssl.sh скачан и готов к использованию."
+
 
 
