@@ -10,11 +10,8 @@ NGINX_CONF="nginx.conf"
 
 # Обновление nginx.conf для добавления новых доменов
 echo "Обновляю nginx.conf..."
-for DOMAIN in $DOMAINS; do
-    if ! grep -q "server_name .* $DOMAIN;" "$NGINX_CONF"; then
-        sed -i "/server_name / s/$/ $DOMAIN;/" "$NGINX_CONF"
-    fi
-done
+DOMAINS_STRING=$(echo $DOMAINS | sed -e 's/ /; /g')
+sed -i "/server_name /c\    server_name $DOMAINS_STRING;" "$NGINX_CONF"
 echo "nginx.conf обновлен."
 
 # Добавление конфигурации SSL для каждого домена
