@@ -77,7 +77,7 @@ services:
       YOURLS_USER: $YOURLS_ADMIN_USER
       YOURLS_PASS: $YOURLS_ADMIN_PASS
     volumes:
-      - yourls_data:/var/www/html
+      - ./yourls_data:/var/www/html
       - ./plugins:/var/www/html/user/plugins
   nginx:
     build: .
