@@ -50,8 +50,11 @@ docker-compose restart nginx
 echo "Nginx перезапущен."
 
 # Выпуск SSL-сертификатов для новых доменов
-echo "Выпускаю SSL-сертификаты..."
 for DOMAIN in $DOMAINS; do
     docker-compose exec nginx certbot certonly --webroot -w /var/www/certbot -d $DOMAIN --email $EMAIL --agree-tos --no-eff-email --keep-until-expiring --quiet
-    echo "SSL-сертификат для $DOMAIN выписан."
+    if [ $? -eq 0 ]; then
+        echo "SSL-сертификат для $DOMAIN успешно выписан."
+    else
+        echo "Ошибка при выпуске SSL-сертификата для $DOMAIN."
+    fi
 done
