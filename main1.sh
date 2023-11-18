@@ -21,7 +21,7 @@ read -p "Enter your YOURLS admin password: " YOURLS_ADMIN_PASS
 echo
 read -p "Enter your MySQL root password: " MYSQL_ROOT_PASS
 echo
-read -sp "Enter your YOURLS database password: " YOURLS_DB_PASS
+read -p "Enter your YOURLS database password: " YOURLS_DB_PASS
 echo
 
 # Создание Dockerfile для Nginx
