@@ -85,8 +85,8 @@ services:
       - yourls
     volumes:
       - ./nginx.conf:/etc/nginx/nginx.conf
-      - certbot_data:/var/www/certbot
-      - certbot_certs:/etc/letsencrypt
+      - ./certbot_data:/var/www/certbot
+      - ./certbot_certs:/etc/letsencrypt
     ports:
       - '80:80'
       - '443:443'
