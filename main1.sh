@@ -138,3 +138,10 @@ sed -i '/http {/a \ \ \ \ include /etc/nginx/conf.d/*.conf;' nginx.conf
 
 # Перезапуск Docker Compose для применения изменений
 docker-compose restart nginx
+# ... предыдущие шаги скрипта ...
+
+# Настройка cron job для автоматического обновления сертификатов
+CURRENT_DIR=$(pwd)
+(crontab -l 2>/dev/null; echo "0 */12 * * * cd $CURRENT_DIR && /usr/local/bin/docker-compose exec -T nginx certbot renew && /usr/local/bin/docker-compose restart nginx") | crontab -
+
+
