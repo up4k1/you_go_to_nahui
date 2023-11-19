@@ -79,6 +79,7 @@ services:
     volumes:
       - yourls_data:/var/www/html
       - ./plugins:/var/www/html/user/plugins
+      - ./Ydata:/var/www
   nginx:
     build: .
     depends_on:
