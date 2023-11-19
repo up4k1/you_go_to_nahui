@@ -141,8 +141,9 @@ YOURLS_CONTAINER_ID=$(docker-compose ps -q yourls)
 
 # Изменение файла config.php внутри контейнера
 if [ ! -z "$YOURLS_CONTAINER_ID" ]; then
-    docker exec $YOURLS_CONTAINER_ID bash -c "sed -i \"s/define( 'YOURLS_UNIQUE_URLS', getenv('YOURLS_UNIQUE_URLS') === false ?: filter_var(getenv('YOURLS_UNIQUE_URLS'), FILTER_VALIDATE_BOOLEAN) );/define( 'YOURLS_UNIQUE_URLS', true );/\" /var/www/html/user/config.php"
+    docker exec $YOURLS_CONTAINER_ID bash -c "sed -i \"s/define( 'YOURLS_UNIQUE_URLS', getenv('YOURLS_UNIQUE_URLS') === false /define( 'YOURLS_UNIQUE_URLS', getenv('YOURLS_UNIQUE_URLS') === true /\" /var/www/html/user/config.php"
 fi
+
 
 
 
