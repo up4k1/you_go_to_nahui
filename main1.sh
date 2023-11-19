@@ -135,7 +135,14 @@ if [ ! -z "$YOURLS_CONTAINER_ID" ]; then
     docker exec $YOURLS_CONTAINER_ID bash -c "echo 'ServerName $DOMAIN' >> /etc/apache2/apache2.conf && apachectl restart"
 fi
 sed -i '/http {/a \ \ \ \ include /etc/nginx/conf.d/*.conf;' nginx.conf
-sed -i "s/define( 'YOURLS_UNIQUE_URLS', getenv('YOURLS_UNIQUE_URLS') === false ?: filter_var(getenv('YOURLS_UNIQUE_URLS'), FILTER_VALIDATE_BOOLEAN) );/define( 'YOURLS_UNIQUE_URLS', true );/" /yourls_data/user/config.php
+# Получение ID контейнера YOURLS
+YOURLS_CONTAINER_ID=$(docker-compose ps -q yourls)
+
+# Изменение файла config.php внутри контейнера
+if [ ! -z "$YOURLS_CONTAINER_ID" ]; then
+    docker exec $YOURLS_CONTAINER_ID bash -c "sed -i \"s/define( 'YOURLS_UNIQUE_URLS', getenv('YOURLS_UNIQUE_URLS') === false ?: filter_var(getenv('YOURLS_UNIQUE_URLS'), FILTER_VALIDATE_BOOLEAN) );/define( 'YOURLS_UNIQUE_URLS', true );/\" /var/www/html/user/config.php"
+fi
+
 
 
 # Перезапуск Docker Compose для применения изменений
