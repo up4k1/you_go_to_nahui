@@ -12,10 +12,11 @@ NGINX_CONF="nginx.conf"
 echo "Обновляю nginx.conf..."
 for DOMAIN in $DOMAINS; do
     if ! grep -q "$DOMAIN" "$NGINX_CONF"; then
-        sed -i "/server_name / s/$/ $DOMAIN;/" "$NGINX_CONF"
+        sed -i "/server_name / s/;/ $DOMAIN;/" "$NGINX_CONF" # Исправлено: добавление домена перед ';'
     fi
 done
 echo "nginx.conf обновлен."
+
 
 # Получение ID контейнера Nginx
 NGINX_CONTAINER_ID=$(docker-compose ps -q nginx)
