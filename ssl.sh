@@ -13,6 +13,16 @@ echo "Обновляю nginx.conf..."
 sed -i "/server_name /c\    server_name $DOMAINS;" "$NGINX_CONF"
 echo "nginx.conf обновлен."
 
+# Выпуск SSL-сертификатов для новых доменов
+for DOMAIN in $DOMAINS; do
+    docker-compose exec nginx certbot certonly --webroot -w /var/www/certbot -d $DOMAIN --email $EMAIL --agree-tos --no-eff-email --keep-until-expiring --quiet
+    if [ $? -eq 0 ]; then
+        echo "SSL-сертификат для $DOMAIN успешно выписан."
+    else
+        echo "Ошибка при выпуске SSL-сертификата для $DOMAIN."
+    fi
+done
+
 # Добавление конфигурации SSL для каждого домена
 echo "Добавляю конфигурации SSL в $NGINX_SSL_CONF..."
 for DOMAIN in $DOMAINS; do
@@ -47,13 +57,3 @@ docker cp "$NGINX_SSL_CONF" "$NGINX_CONTAINER_ID:/etc/nginx/conf.d/default.conf"
 docker cp "$NGINX_CONF" "$NGINX_CONTAINER_ID:/etc/nginx/nginx.conf"
 docker-compose restart nginx
 echo "Nginx перезапущен."
-
-# Выпуск SSL-сертификатов для новых доменов
-for DOMAIN in $DOMAINS; do
-    docker-compose exec nginx certbot certonly --webroot -w /var/www/certbot -d $DOMAIN --email $EMAIL --agree-tos --no-eff-email --keep-until-expiring --quiet
-    if [ $? -eq 0 ]; then
-        echo "SSL-сертификат для $DOMAIN успешно выписан."
-    else
-        echo "Ошибка при выпуске SSL-сертификата для $DOMAIN."
-    fi
-done
