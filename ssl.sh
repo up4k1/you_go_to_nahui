@@ -10,23 +10,24 @@ NGINX_CONF="nginx.conf"
 
 # Обновление nginx.conf для добавления новых доменов
 echo "Обновляю nginx.conf..."
-sed -i "/server_name /c\    server_name $DOMAINS;" "$NGINX_CONF"
+for DOMAIN in $DOMAINS; do
+    if ! grep -q "$DOMAIN" "$NGINX_CONF"; then
+        sed -i "/server_name / s/$/ $DOMAIN;/" "$NGINX_CONF"
+    fi
+done
 echo "nginx.conf обновлен."
 
-# Выпуск SSL-сертификатов для новых доменов
+# Получение ID контейнера Nginx
+NGINX_CONTAINER_ID=$(docker-compose ps -q nginx)
+
+# Выпуск SSL-сертификатов для новых доменов и обновление конфигурации SSL
 for DOMAIN in $DOMAINS; do
     docker-compose exec nginx certbot certonly --webroot -w /var/www/certbot -d $DOMAIN --email $EMAIL --agree-tos --no-eff-email --keep-until-expiring --quiet
     if [ $? -eq 0 ]; then
         echo "SSL-сертификат для $DOMAIN успешно выписан."
-    else
-        echo "Ошибка при выпуске SSL-сертификата для $DOMAIN."
-    fi
-done
 
-# Добавление конфигурации SSL для каждого домена
-echo "Добавляю конфигурации SSL в $NGINX_SSL_CONF..."
-for DOMAIN in $DOMAINS; do
-    if ! grep -q "server_name $DOMAIN;" "$NGINX_SSL_CONF"; then
+        # Добавление конфигурации SSL для домена, если сертификат получен
+        echo "Добавляю конфигурацию SSL для $DOMAIN в $NGINX_SSL_CONF..."
         cat <<EOF >>"$NGINX_SSL_CONF"
 server {
     listen 443 ssl;
@@ -44,16 +45,16 @@ server {
     }
 }
 EOF
-        echo "Конфигурация для $DOMAIN добавлена."
+        echo "Конфигурация SSL для $DOMAIN добавлена в $NGINX_SSL_CONF."
+    else
+        echo "Ошибка при выпуске SSL-сертификата для $DOMAIN. Домен не будет добавлен в SSL-конфигурацию."
     fi
 done
 
-# Получение ID контейнера Nginx
-NGINX_CONTAINER_ID=$(docker-compose ps -q nginx)
+# Копирование обновленной конфигурации SSL в контейнер
+echo "Обновляю конфигурацию SSL в контейнере Nginx..."
+cat "$NGINX_SSL_CONF" | docker exec -i $NGINX_CONTAINER_ID sh -c 'cat > /etc/nginx/conf.d/default.conf'
 
-# Копирование обновленной конфигурации в контейнер и перезапуск Nginx
-echo "Обновляю конфигурацию в контейнере Nginx..."
-docker cp "$NGINX_SSL_CONF" "$NGINX_CONTAINER_ID:/etc/nginx/conf.d/default.conf"
-docker cp "$NGINX_CONF" "$NGINX_CONTAINER_ID:/etc/nginx/nginx.conf"
+# Перезапуск Nginx
 docker-compose restart nginx
 echo "Nginx перезапущен."
