@@ -21,4 +21,5 @@ chmod +x my_script.sh
 
 
 Отдельная установка docker+docker-compose 
+
     curl -k -o ddcs.sh https://raw.githubusercontent.com/up4k1/you_go_to_nahui/main/ddcsetup.sh
