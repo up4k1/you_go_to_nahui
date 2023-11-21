@@ -7,11 +7,11 @@
 Привязываем домен на голый сервак, копируем команды, жмем ентер, указываем данные - радуемся. SSL обновляется автоматически, проверка каждый день. 
 Если хочется привязать кучу доменов - выполнить: ./ssl.sh в консоли 
 
-curl -k -o my_script.sh https://raw.githubusercontent.com/up4k1/you_go_to_nahui/main/main1.sh
+        curl -k -o my_script.sh https://raw.githubusercontent.com/up4k1/you_go_to_nahui/main/main1.sh
 
-chmod +x my_script.sh
+        chmod +x my_script.sh
 
-./my_script.sh
+        ./my_script.sh
 
 
 
