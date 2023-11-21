@@ -21,9 +21,8 @@
 
 
 Отдельная установка docker+docker-compose 
-
-
-        apt install curl -y
-        curl -k -o ddcs.sh https://raw.githubusercontent.com/up4k1/you_go_to_nahui/main/ddcsetup.sh
-        chmod +x ddcs.sh
-        ./ddcs.sh
+ apt update -y
+ apt install curl -y
+ curl -k -o ddcs.sh https://raw.githubusercontent.com/up4k1/you_go_to_nahui/main/ddcsetup.sh
+ chmod +x ddcs.sh
+ ./ddcs.sh
