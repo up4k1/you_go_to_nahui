@@ -64,6 +64,8 @@ services:
       MYSQL_PASSWORD: $YOURLS_DB_PASS
     volumes:
       - db_data:/var/lib/mysql
+    restart: always
+    
   yourls:
     image: yourls
     depends_on:
@@ -80,6 +82,8 @@ services:
       - yourls_data:/var/www/html
       - ./plugins:/var/www/html/user/plugins
       - ./Ydata:/var/www/html/user
+    restart: always
+    
   nginx:
     build: .
     depends_on:
@@ -91,6 +95,7 @@ services:
     ports:
       - '80:80'
       - '443:443'
+    restart: always
 volumes:
   db_data:
   yourls_data:
